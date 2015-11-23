@@ -17,7 +17,7 @@ type ChunkStore interface {
 	Push(string) error
 	Rm(string) error
 	Fetch(string) error
-	GC() error
+	GC(bool) error
 	ChunkPath(string) string
 }
 
@@ -82,14 +82,17 @@ func (c *chunkStore) Push(name string) error {
 
 func (c *chunkStore) Rm(name string) error {
 	mp := c.ManifestPath(name)
-	return os.Remove(mp)
+	if err := os.Remove(mp); err != nil {
+		return err
+	}
+	return c.GC(false)
 }
 
 func (c *chunkStore) Fetch(name string) error {
 	return nil
 }
 
-func (c *chunkStore) GC() error {
+func (c *chunkStore) GC(verbose bool) error {
 	allChunks := make(map[string]struct{})
 
 	manifestDir := filepath.Join(c.path, "manifests")
@@ -125,9 +128,15 @@ func (c *chunkStore) GC() error {
 			if _, ok := allChunks[cfi.Name()]; !ok {
 				p := filepath.Join(c.path, "chunks", fi.Name(), cfi.Name())
 				_ = p
-				fmt.Println(cfi.Name())
+				if verbose {
+					fmt.Println(cfi.Name())
+				}
 				os.Remove(p)
 			}
+		}
+		fis, err = ioutil.ReadDir(filepath.Join(c.path, "chunks", fi.Name()))
+		if err == nil && len(fis) == 0 {
+			os.Remove(filepath.Join(c.path, "chunks", fi.Name()))
 		}
 	}
 

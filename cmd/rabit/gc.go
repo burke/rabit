@@ -19,5 +19,5 @@ Environment Variables:
 
 func cmdGC(args *docopt.Args, rabitDir, rabitRemote string) error {
 	repo := chunkstore.New(rabitDir, rabitRemote)
-	return repo.GC()
+	return repo.GC(true)
 }

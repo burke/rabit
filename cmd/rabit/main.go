@@ -22,8 +22,8 @@ Commands:
   help       Show usage for a specific command
   init       Initialize a new rabit repository
   add        Add a file to the rabit repository
-  ls-files   List files in a rabit repository
-  cat-file   Print the contents of a file in the repository
+  ls         List files in a rabit repository
+  cat        Print the contents of a file in the repository
   rm         Remove a file from the rabit repository
   gc         Remove any blocks belonging only to removed manifests
   push       Upload to the rabit server

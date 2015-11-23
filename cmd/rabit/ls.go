@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	register("ls-files", cmdLsFiles, true, false, `
-usage: %s ls-files
+	register("ls", cmdLs, true, false, `
+usage: %s ls
 
 List files in a rabit repository
 
@@ -19,7 +19,7 @@ Environment Variables:
 `)
 }
 
-func cmdLsFiles(args *docopt.Args, rabitDir, rabitRemote string) error {
+func cmdLs(args *docopt.Args, rabitDir, rabitRemote string) error {
 	repo := chunkstore.New(rabitDir, rabitRemote)
 	names, err := repo.LsFiles()
 	if err != nil {

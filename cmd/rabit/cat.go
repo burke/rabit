@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	register("cat-file", cmdCatFile, true, false, `
-usage: %s cat-file <name>
+	register("cat", cmdCat, true, false, `
+usage: %s cat <name>
 
 Write the contents of a file in the repository to stdout.
 
@@ -19,7 +19,7 @@ Environment Variables:
 `)
 }
 
-func cmdCatFile(args *docopt.Args, rabitDir, rabitRemote string) error {
+func cmdCat(args *docopt.Args, rabitDir, rabitRemote string) error {
 	repo := chunkstore.New(rabitDir, rabitRemote)
 
 	name := args.String["<name>"]
