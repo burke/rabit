@@ -80,7 +80,7 @@ func (c *repo) manifestPath(name string) string {
 	return filepath.Join(c.path, "manifests", name)
 }
 
-func (c *repo) loadManifest(name string) (*Manifest, error) {
+func (c *repo) loadManifest(name string) (*manifest, error) {
 	p := c.manifestPath(name)
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *repo) loadManifest(name string) (*Manifest, error) {
 	}
 
 	hashes := strings.Split(strings.TrimSpace(string(data)), "\n")
-	return &Manifest{chunks: hashes}, nil
+	return &manifest{chunks: hashes}, nil
 }
 
 func writeManifest(path string, spans []span) error {
@@ -97,7 +97,7 @@ func writeManifest(path string, spans []span) error {
 		hashes = append(hashes, span.br)
 	}
 
-	manifest := Manifest{chunks: hashes}
+	manifest := manifest{chunks: hashes}
 
 	return ioutil.WriteFile(path, []byte(manifest.String()), 0660)
 }

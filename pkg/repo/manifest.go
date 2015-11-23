@@ -4,10 +4,10 @@ import (
 	"strings"
 )
 
-type Manifest struct {
+type manifest struct {
 	chunks []string
 }
 
-func (m *Manifest) String() string {
+func (m *manifest) String() string {
 	return strings.Join(m.chunks, "\n") + "\n"
 }
