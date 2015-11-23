@@ -10,13 +10,11 @@ import (
 )
 
 type Repo interface {
+	Init() error
 	Add(io.Reader, string) error
 	LsFiles() ([]string, error)
-	LsRemote() ([]string, error)
 	CatFile(string, io.Writer) error
-	Push(string) error
 	Rm(string) error
-	Fetch(string) error
 	GC(bool) error
 	ChunkPath(string) string
 }
@@ -26,8 +24,16 @@ type repo struct {
 	remote string
 }
 
-func New(path, remote string) Repo {
-	return &repo{path: path, remote: remote}
+func New(path string) Repo {
+	return &repo{path: path}
+}
+
+func (c *repo) Init() error {
+	if err := os.Mkdir(filepath.Join(c.path, "chunks"), 0755); err != nil {
+		return err
+	}
+
+	return os.Mkdir(filepath.Join(c.path, "manifests"), 0755)
 }
 
 func (c *repo) Add(r io.Reader, name string) error {
@@ -72,24 +78,12 @@ func (c *repo) LsFiles() ([]string, error) {
 	return names, nil
 }
 
-func (c *repo) LsRemote() ([]string, error) {
-	return nil, nil
-}
-
-func (c *repo) Push(name string) error {
-	return nil
-}
-
 func (c *repo) Rm(name string) error {
 	mp := c.ManifestPath(name)
 	if err := os.Remove(mp); err != nil {
 		return err
 	}
 	return c.GC(false)
-}
-
-func (c *repo) Fetch(name string) error {
-	return nil
 }
 
 func (c *repo) GC(verbose bool) error {

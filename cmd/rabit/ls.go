@@ -20,7 +20,7 @@ Environment Variables:
 }
 
 func cmdLs(args *docopt.Args, rabitDir, rabitRemote string) error {
-	repo := repo.New(rabitDir, rabitRemote)
+	repo := repo.New(rabitDir)
 	names, err := repo.LsFiles()
 	if err != nil {
 		return err

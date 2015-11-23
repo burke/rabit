@@ -20,7 +20,7 @@ Environment Variables:
 }
 
 func cmdAdd(args *docopt.Args, rabitDir, rabitRemote string) error {
-	repo := repo.New(rabitDir, rabitRemote)
+	repo := repo.New(rabitDir)
 
 	path := args.String["<path>"]
 	name := args.String["<name>"]

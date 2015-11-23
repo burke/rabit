@@ -18,6 +18,6 @@ Environment Variables:
 }
 
 func cmdGC(args *docopt.Args, rabitDir, rabitRemote string) error {
-	repo := repo.New(rabitDir, rabitRemote)
+	repo := repo.New(rabitDir)
 	return repo.GC(true)
 }

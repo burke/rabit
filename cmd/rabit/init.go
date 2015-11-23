@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/burke/rabit/Godeps/_workspace/src/github.com/flynn/go-docopt"
+
+	"github.com/burke/rabit/pkg/repo"
 )
 
 func init() {
@@ -28,13 +29,5 @@ func cmdInit(args *docopt.Args, rabitDir, rabitRemote string) error {
 		return fmt.Errorf("RABIT_DIR must specify a path to an existing directory")
 	}
 
-	if err := os.Mkdir(filepath.Join(rabitDir, "chunks"), 0755); err != nil {
-		return err
-	}
-
-	if err := os.Mkdir(filepath.Join(rabitDir, "manifests"), 0755); err != nil {
-		return err
-	}
-
-	return nil
+	return repo.New(rabitDir).Init()
 }
