@@ -43,10 +43,10 @@ func main() {
 	cmdArgs := args.All["<args>"].([]string)
 
 	if cmd == "help" {
-		if len(cmdArgs) == 0 { // `tuf-client help`
+		if len(cmdArgs) == 0 { // `rabit help`
 			fmt.Println(usage)
 			return
-		} else { // `tuf-client help <command>`
+		} else { // `rabit help <command>`
 			cmd = cmdArgs[0]
 			cmdArgs = []string{"--help"}
 		}
@@ -88,7 +88,7 @@ func runCommand(name string, args []string) error {
 
 	cmd, ok := commands[name]
 	if !ok {
-		return fmt.Errorf("%s is not a tuf-client command. See 'tuf-client help'", name)
+		return fmt.Errorf("%s is not a rabit command. See 'rabit help'", name)
 	}
 
 	parsedArgs, err := docopt.Parse(cmd.usage, argv, true, "", true)

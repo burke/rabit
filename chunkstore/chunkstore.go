@@ -90,7 +90,48 @@ func (c *chunkStore) Fetch(name string) error {
 }
 
 func (c *chunkStore) GC() error {
-	return fmt.Errorf("GC not yet implemented")
+	allChunks := make(map[string]struct{})
+
+	manifestDir := filepath.Join(c.path, "manifests")
+	fis, err := ioutil.ReadDir(manifestDir)
+	if err != nil {
+		return err
+	}
+
+	for _, fi := range fis {
+		p := c.ManifestPath(fi.Name())
+		data, err := ioutil.ReadFile(p)
+		if err != nil {
+			return err
+		}
+
+		hashes := strings.Split(strings.TrimSpace(string(data)), "\n")
+		for _, h := range hashes {
+			//fmt.Println(h)
+			allChunks[h] = struct{}{}
+		}
+	}
+
+	prefixFIs, err := ioutil.ReadDir(filepath.Join(c.path, "chunks"))
+	if err != nil {
+		return err
+	}
+	for _, fi := range prefixFIs {
+		fis, err := ioutil.ReadDir(filepath.Join(c.path, "chunks", fi.Name()))
+		if err != nil {
+			return err
+		}
+		for _, cfi := range fis {
+			if _, ok := allChunks[cfi.Name()]; !ok {
+				p := filepath.Join(c.path, "chunks", fi.Name(), cfi.Name())
+				_ = p
+				fmt.Println(cfi.Name())
+				os.Remove(p)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *chunkStore) ChunkPath(hash string) string {
