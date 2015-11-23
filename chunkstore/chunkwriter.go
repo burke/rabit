@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/burke/rabin-tuf/rollsum"
+	"github.com/burke/rabit/rollsum"
 )
 
 const (

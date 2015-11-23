@@ -3,14 +3,14 @@ package main
 import (
 	"os"
 
-	"github.com/burke/rabin-tuf/chunkstore"
+	"github.com/burke/rabit/chunkstore"
 )
 
 func main() {
 
 	cs := chunkstore.New("/tmp/omgwtf", "whatever")
 
-	f, err := os.Open("test/vmlinuz")
+	f, err := os.Open("/tmp/vmlinuz")
 	if err != nil {
 		panic(err)
 	}
