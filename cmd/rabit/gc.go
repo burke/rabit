@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/flynn/go-docopt"
 
-	"github.com/burke/rabit/repo"
+	"github.com/burke/rabit/pkg/repo"
 )
 
 func init() {

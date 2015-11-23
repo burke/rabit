@@ -10,7 +10,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/burke/rabit/rollsum"
+	"github.com/burke/rabit/pkg/rollsum"
 )
 
 const (
