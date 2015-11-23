@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	register("fetch", cmdPush, `
+	register("fetch", cmdPush, true, true, `
 usage: %s push <name>
 
 Copy a file from the local rabit repository to the rabit server.
@@ -19,7 +19,7 @@ Environment Variables:
 }
 
 func cmdPush(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	fmt.Println("done push")
 
 	return nil
 }

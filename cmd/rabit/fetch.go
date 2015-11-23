@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	register("fetch", cmdFetch, `
+	register("fetch", cmdFetch, true, true, `
 usage: %s fetch <name>
 
 Copy a file from a remote rabit server to the local repository.
@@ -19,7 +19,7 @@ Environment Variables:
 }
 
 func cmdFetch(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	fmt.Println("done fetch")
 
 	return nil
 }

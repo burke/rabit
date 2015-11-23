@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	register("ls-remote", cmdLsRemote, `
+	register("ls-remote", cmdLsRemote, false, true, `
 usage: %s ls-remote
 
 List files in a remote rabit repository.
@@ -18,7 +18,7 @@ Environment Variables:
 }
 
 func cmdLsRemote(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	fmt.Println("done ls-remote")
 
 	return nil
 }

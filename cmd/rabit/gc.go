@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	register("gc", cmdGC, `
+	register("gc", cmdGC, true, false, `
 usage: %s gc
 
 Remove any blocks belonging only to removed manifests
@@ -18,7 +18,7 @@ Environment Variables:
 }
 
 func cmdGC(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	fmt.Println("done gc")
 
 	return nil
 }

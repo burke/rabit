@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/flynn/go-docopt"
+
+	"github.com/burke/rabit/chunkstore"
 )
 
 func init() {
-	register("cat-file", cmdCatFile, `
+	register("cat-file", cmdCatFile, true, false, `
 usage: %s cat-file <name>
 
 Write the contents of a file in the repository to stdout.
@@ -18,7 +20,9 @@ Environment Variables:
 }
 
 func cmdCatFile(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	repo := chunkstore.New(rabitDir, rabitRemote)
 
-	return nil
+	name := args.String["<name>"]
+
+	return repo.CatFile(name, os.Stdout)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	register("ls-files", cmdLsFiles, `
+	register("ls-files", cmdLsFiles, true, false, `
 usage: %s ls-files
 
 List files in a rabit repository
@@ -18,7 +18,7 @@ Environment Variables:
 }
 
 func cmdLsFiles(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	fmt.Println("done ls-files")
 
 	return nil
 }

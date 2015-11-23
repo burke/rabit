@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/flynn/go-docopt"
+
+	"github.com/burke/rabit/chunkstore"
 )
 
 func init() {
-	register("add", cmdInit, `
+	register("add", cmdAdd, true, false, `
 usage: %s add <path> <name>
 
 Add a file to the rabit repository
@@ -18,7 +20,15 @@ Environment Variables:
 }
 
 func cmdAdd(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	repo := chunkstore.New(rabitDir, rabitRemote)
 
-	return nil
+	path := args.String["<path>"]
+	name := args.String["<name>"]
+
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	return repo.Add(f, name)
 }

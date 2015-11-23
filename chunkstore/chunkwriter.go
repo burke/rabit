@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"path"
 
 	"github.com/burke/rabit/rollsum"
 )
@@ -47,20 +49,11 @@ func (r *noteEOFReader) Read(p []byte) (n int, err error) {
 
 type span struct {
 	from, to int64
-	bits     int
 	br       string
-	children []span
-}
-
-func (s *span) isSingleBlob() bool {
-	return len(s.children) == 0
 }
 
 func (s *span) size() int64 {
 	size := s.to - s.from
-	for _, cs := range s.children {
-		size += cs.size()
-	}
 	return size
 }
 
@@ -70,9 +63,10 @@ func sha1FromString(s string) string {
 	return hex.EncodeToString(s1.Sum(nil))
 }
 
-func uploadString(br, chunk string) (n int, err error) {
-	fmt.Printf("%s %d\n", string(br), len(chunk))
-	return 0, nil
+func uploadString(store ChunkStore, br, chunk string) error {
+	pth := store.ChunkPath(br)
+	_ = os.Mkdir(path.Dir(pth), 0755)
+	return ioutil.WriteFile(pth, []byte(chunk), 0660)
 }
 
 type chunkWriter struct {
@@ -85,8 +79,9 @@ func newChunkWriter(cspath string, r io.Reader) *chunkWriter {
 	return &chunkWriter{path: cspath, r: r}
 }
 
-func (w *chunkWriter) writeChunks() (n int64, outerr error) {
-	//func writeFileChunks(r io.Reader) (n int64, spans []span, outerr error) {
+func (w *chunkWriter) writeChunks(store ChunkStore) ([]span, error) {
+	var outerr error
+	var n int64
 	src := &noteEOFReader{r: w.r}
 	bufr := bufio.NewReaderSize(src, bufioReaderSize)
 	w.spans = []span{} // the tree of spans, cut on interesting rollsum boundaries
@@ -116,7 +111,7 @@ func (w *chunkWriter) writeChunks() (n int64, outerr error) {
 		gate <- struct{}{}
 		go func() {
 			defer func() { <-gate }()
-			if _, err := uploadString(br, chunk); err != nil {
+			if err := uploadString(store, br, chunk); err != nil {
 				select {
 				case firsterrc <- err:
 				default:
@@ -132,13 +127,13 @@ func (w *chunkWriter) writeChunks() (n int64, outerr error) {
 			if n != last {
 				w.spans = append(w.spans, span{from: last, to: n})
 				if !uploadLastSpan() {
-					return
+					return nil, outerr
 				}
 			}
 			break
 		}
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 
 		buf.WriteByte(c)
@@ -146,46 +141,30 @@ func (w *chunkWriter) writeChunks() (n int64, outerr error) {
 		blobSize++
 		rs.Roll(c)
 
-		var bits int
 		onRollSplit := rs.OnSplit()
 		switch {
-		case blobSize == maxBlobSize:
-			bits = 20 // arbitrary node weight; 1<<20 == 1MB
+		case blobSize == maxBlobSize || onRollSplit && blobSize > tooSmallThreshold:
+			// split
 		case src.sawEOF:
 			// Don't split. End is coming soon enough.
 			continue
-		case onRollSplit && blobSize > tooSmallThreshold:
-			bits = rs.Bits()
 		default:
 			// Don't split.
 			continue
 		}
 		blobSize = 0
 
-		// Take any spans from the end of the spans slice that
-		// have a smaller 'bits' score and make them children
-		// of this node.
-		var children []span
-		childrenFrom := len(w.spans)
-		for childrenFrom > 0 && w.spans[childrenFrom-1].bits < bits {
-			childrenFrom--
-		}
-		if nCopy := len(w.spans) - childrenFrom; nCopy > 0 {
-			children = make([]span, nCopy)
-			copy(children, w.spans[childrenFrom:])
-			w.spans = w.spans[:childrenFrom]
-		}
-
-		w.spans = append(w.spans, span{from: last, to: n, bits: bits, children: children})
+		w.spans = append(w.spans, span{from: last, to: n})
 		last = n
+
 		if !uploadLastSpan() {
-			return
+			return nil, outerr
 		}
 	}
 
 	// Loop was already hit earlier.
 	if outerr != nil {
-		return 0, outerr
+		return nil, outerr
 	}
 
 	// Wait for all uploads to finish, one way or another, and then
@@ -197,9 +176,9 @@ func (w *chunkWriter) writeChunks() (n int64, outerr error) {
 	}
 	select {
 	case err := <-firsterrc:
-		return 0, err
+		return nil, err
 	default:
 	}
 
-	return n, nil
+	return w.spans, nil
 }

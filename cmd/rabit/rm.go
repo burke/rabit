@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	register("rm", cmdRm, `
+	register("rm", cmdRm, true, false, `
 usage: %s rm <name>
 
 Remove a file from the rabit repository.
@@ -19,7 +19,7 @@ Environment Variables:
 }
 
 func cmdRm(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done")
+	fmt.Println("done rm")
 
 	return nil
 }
