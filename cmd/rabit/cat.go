@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/flynn/go-docopt"
+	"github.com/burke/rabit/Godeps/_workspace/src/github.com/flynn/go-docopt"
 
 	"github.com/burke/rabit/pkg/repo"
 )

@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/flynn/go-docopt"
+	"github.com/burke/rabit/Godeps/_workspace/src/github.com/flynn/go-docopt"
 )
 
 const usageTpl = `usage: %s [-h|--help] <command> [<args>...]
