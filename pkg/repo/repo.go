@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -45,23 +46,10 @@ func (c *repo) Add(r io.Reader, name string) error {
 	return writeManifest(c.manifestPath(name), spans)
 }
 
-func (c *repo) CatFile(name string, w io.Writer) error {
-	manifest, err := c.loadManifest(name)
-	if err != nil {
-		return err
-	}
-
-	for _, ch := range manifest.chunks {
-		cpath := c.ChunkPath(ch)
-		f, err := os.Open(cpath)
-		if err != nil {
-			return err
-		}
-		io.Copy(w, f)
-		f.Close()
-	}
-
-	return nil
+type fileContentsOptionPromise struct {
+	data     []byte
+	err      error
+	resolved chan struct{}
 }
 
 func (c *repo) LsFiles() ([]string, error) {
