@@ -1,6 +1,7 @@
 package chunkstore
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -59,7 +60,16 @@ func (c *chunkStore) CatFile(name string, w io.Writer) error {
 }
 
 func (c *chunkStore) LsFiles() ([]string, error) {
-	return nil, nil
+	manifestDir := filepath.Join(c.path, "manifests")
+	fis, err := ioutil.ReadDir(manifestDir)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, fi := range fis {
+		names = append(names, fi.Name())
+	}
+	return names, nil
 }
 
 func (c *chunkStore) LsRemote() ([]string, error) {
@@ -71,7 +81,8 @@ func (c *chunkStore) Push(name string) error {
 }
 
 func (c *chunkStore) Rm(name string) error {
-	return nil
+	mp := c.ManifestPath(name)
+	return os.Remove(mp)
 }
 
 func (c *chunkStore) Fetch(name string) error {
@@ -79,7 +90,7 @@ func (c *chunkStore) Fetch(name string) error {
 }
 
 func (c *chunkStore) GC() error {
-	return nil
+	return fmt.Errorf("GC not yet implemented")
 }
 
 func (c *chunkStore) ChunkPath(hash string) string {

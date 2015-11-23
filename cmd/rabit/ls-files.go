@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/flynn/go-docopt"
+
+	"github.com/burke/rabit/chunkstore"
 )
 
 func init() {
@@ -18,7 +20,13 @@ Environment Variables:
 }
 
 func cmdLsFiles(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done ls-files")
-
+	repo := chunkstore.New(rabitDir, rabitRemote)
+	names, err := repo.LsFiles()
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		fmt.Println(name)
+	}
 	return nil
 }

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/flynn/go-docopt"
+
+	"github.com/burke/rabit/chunkstore"
 )
 
 func init() {
@@ -18,7 +18,6 @@ Environment Variables:
 }
 
 func cmdGC(args *docopt.Args, rabitDir, rabitRemote string) error {
-	fmt.Println("done gc")
-
-	return nil
+	repo := chunkstore.New(rabitDir, rabitRemote)
+	return repo.GC()
 }
