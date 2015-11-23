@@ -1,4 +1,4 @@
-package chunkstore
+package repo
 
 import (
 	"bufio"
@@ -63,8 +63,8 @@ func sha1FromString(s string) string {
 	return hex.EncodeToString(s1.Sum(nil))
 }
 
-func uploadString(store ChunkStore, br, chunk string) error {
-	pth := store.ChunkPath(br)
+func uploadString(repo Repo, br, chunk string) error {
+	pth := repo.ChunkPath(br)
 	_ = os.Mkdir(path.Dir(pth), 0755)
 	return ioutil.WriteFile(pth, []byte(chunk), 0660)
 }
@@ -79,7 +79,7 @@ func newChunkWriter(cspath string, r io.Reader) *chunkWriter {
 	return &chunkWriter{path: cspath, r: r}
 }
 
-func (w *chunkWriter) writeChunks(store ChunkStore) ([]span, error) {
+func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 	var outerr error
 	var n int64
 	src := &noteEOFReader{r: w.r}
@@ -111,7 +111,7 @@ func (w *chunkWriter) writeChunks(store ChunkStore) ([]span, error) {
 		gate <- struct{}{}
 		go func() {
 			defer func() { <-gate }()
-			if err := uploadString(store, br, chunk); err != nil {
+			if err := uploadString(repo, br, chunk); err != nil {
 				select {
 				case firsterrc <- err:
 				default:

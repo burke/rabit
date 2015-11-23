@@ -5,7 +5,7 @@ import (
 
 	"github.com/flynn/go-docopt"
 
-	"github.com/burke/rabit/chunkstore"
+	"github.com/burke/rabit/repo"
 )
 
 func init() {
@@ -20,7 +20,7 @@ Environment Variables:
 }
 
 func cmdCat(args *docopt.Args, rabitDir, rabitRemote string) error {
-	repo := chunkstore.New(rabitDir, rabitRemote)
+	repo := repo.New(rabitDir, rabitRemote)
 
 	name := args.String["<name>"]
 

@@ -1,4 +1,4 @@
-package chunkstore
+package repo
 
 import (
 	"strings"

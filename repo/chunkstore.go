@@ -1,4 +1,4 @@
-package chunkstore
+package repo
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type ChunkStore interface {
+type Repo interface {
 	Add(io.Reader, string) error
 	LsFiles() ([]string, error)
 	LsRemote() ([]string, error)
@@ -21,16 +21,16 @@ type ChunkStore interface {
 	ChunkPath(string) string
 }
 
-type chunkStore struct {
+type repo struct {
 	path   string
 	remote string
 }
 
-func New(path, remote string) ChunkStore {
-	return &chunkStore{path: path, remote: remote}
+func New(path, remote string) Repo {
+	return &repo{path: path, remote: remote}
 }
 
-func (c *chunkStore) Add(r io.Reader, name string) error {
+func (c *repo) Add(r io.Reader, name string) error {
 	w := newChunkWriter(c.path, r)
 	spans, err := w.writeChunks(c)
 	if err != nil {
@@ -40,7 +40,7 @@ func (c *chunkStore) Add(r io.Reader, name string) error {
 	return writeManifest(c.ManifestPath(name), spans)
 }
 
-func (c *chunkStore) CatFile(name string, w io.Writer) error {
+func (c *repo) CatFile(name string, w io.Writer) error {
 	manifest, err := c.loadManifest(name)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (c *chunkStore) CatFile(name string, w io.Writer) error {
 	return nil
 }
 
-func (c *chunkStore) LsFiles() ([]string, error) {
+func (c *repo) LsFiles() ([]string, error) {
 	manifestDir := filepath.Join(c.path, "manifests")
 	fis, err := ioutil.ReadDir(manifestDir)
 	if err != nil {
@@ -72,15 +72,15 @@ func (c *chunkStore) LsFiles() ([]string, error) {
 	return names, nil
 }
 
-func (c *chunkStore) LsRemote() ([]string, error) {
+func (c *repo) LsRemote() ([]string, error) {
 	return nil, nil
 }
 
-func (c *chunkStore) Push(name string) error {
+func (c *repo) Push(name string) error {
 	return nil
 }
 
-func (c *chunkStore) Rm(name string) error {
+func (c *repo) Rm(name string) error {
 	mp := c.ManifestPath(name)
 	if err := os.Remove(mp); err != nil {
 		return err
@@ -88,11 +88,11 @@ func (c *chunkStore) Rm(name string) error {
 	return c.GC(false)
 }
 
-func (c *chunkStore) Fetch(name string) error {
+func (c *repo) Fetch(name string) error {
 	return nil
 }
 
-func (c *chunkStore) GC(verbose bool) error {
+func (c *repo) GC(verbose bool) error {
 	allChunks := make(map[string]struct{})
 
 	manifestDir := filepath.Join(c.path, "manifests")
@@ -143,16 +143,16 @@ func (c *chunkStore) GC(verbose bool) error {
 	return nil
 }
 
-func (c *chunkStore) ChunkPath(hash string) string {
+func (c *repo) ChunkPath(hash string) string {
 	prefix := hash[0:2]
 	return filepath.Join(c.path, "chunks", prefix, hash)
 }
 
-func (c *chunkStore) ManifestPath(name string) string {
+func (c *repo) ManifestPath(name string) string {
 	return filepath.Join(c.path, "manifests", name)
 }
 
-func (c *chunkStore) loadManifest(name string) (*Manifest, error) {
+func (c *repo) loadManifest(name string) (*Manifest, error) {
 	p := c.ManifestPath(name)
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
