@@ -4,8 +4,8 @@ rabit is an implementation of Rabin fingerprinting for large binary blobs to
 enable differential updates.
 
 Currently, the `push`, `fetch`, and `ls-remote` commands are not implemented,
-but they will enable integration with a remote TUF server to manage signed
-differential updates.
+but they will enable integration with a remote [TUF
+server](https://github.com/flynn/go-tuf) to manage signed differential updates.
 
 Use the CLI as documented below or see [`the API
 docs`](https://godoc.org/github.com/burke/rabit/pkg/repo).
