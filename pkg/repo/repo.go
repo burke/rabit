@@ -44,12 +44,6 @@ func (c *repo) Add(r io.Reader, name string) error {
 	return writeManifest(c.manifestPath(name), spans)
 }
 
-type fileContentsOptionPromise struct {
-	data     []byte
-	err      error
-	resolved chan struct{}
-}
-
 func (c *repo) LsFiles() ([]string, error) {
 	manifestDir := filepath.Join(c.path, "manifests")
 	fis, err := ioutil.ReadDir(manifestDir)

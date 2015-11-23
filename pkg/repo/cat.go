@@ -6,6 +6,12 @@ import (
 	"io/ioutil"
 )
 
+type fileContentsOptionPromise struct {
+	data     []byte
+	err      error
+	resolved chan struct{}
+}
+
 func (c *repo) CatFile(name string, w io.Writer) error {
 	manifest, err := c.loadManifest(name)
 	if err != nil {
