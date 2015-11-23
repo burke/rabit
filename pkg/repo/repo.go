@@ -20,8 +20,7 @@ type Repo interface {
 }
 
 type repo struct {
-	path   string
-	remote string
+	path string
 }
 
 func New(path string) Repo {
@@ -43,7 +42,7 @@ func (c *repo) Add(r io.Reader, name string) error {
 		return err
 	}
 
-	return writeManifest(c.ManifestPath(name), spans)
+	return writeManifest(c.manifestPath(name), spans)
 }
 
 func (c *repo) CatFile(name string, w io.Writer) error {
@@ -79,7 +78,7 @@ func (c *repo) LsFiles() ([]string, error) {
 }
 
 func (c *repo) Rm(name string) error {
-	mp := c.ManifestPath(name)
+	mp := c.manifestPath(name)
 	if err := os.Remove(mp); err != nil {
 		return err
 	}
@@ -96,7 +95,7 @@ func (c *repo) GC(verbose bool) error {
 	}
 
 	for _, fi := range fis {
-		p := c.ManifestPath(fi.Name())
+		p := c.manifestPath(fi.Name())
 		data, err := ioutil.ReadFile(p)
 		if err != nil {
 			return err
@@ -104,7 +103,6 @@ func (c *repo) GC(verbose bool) error {
 
 		hashes := strings.Split(strings.TrimSpace(string(data)), "\n")
 		for _, h := range hashes {
-			//fmt.Println(h)
 			allChunks[h] = struct{}{}
 		}
 	}
@@ -142,12 +140,12 @@ func (c *repo) ChunkPath(hash string) string {
 	return filepath.Join(c.path, "chunks", prefix, hash)
 }
 
-func (c *repo) ManifestPath(name string) string {
+func (c *repo) manifestPath(name string) string {
 	return filepath.Join(c.path, "manifests", name)
 }
 
 func (c *repo) loadManifest(name string) (*Manifest, error) {
-	p := c.ManifestPath(name)
+	p := c.manifestPath(name)
 	data, err := ioutil.ReadFile(p)
 	if err != nil {
 		return nil, err
