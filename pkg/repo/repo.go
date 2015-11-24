@@ -11,7 +11,7 @@ import (
 
 type Repo interface {
 	Init() error
-	Add(io.Reader, string) error
+	Add(string, string) error
 	LsFiles() ([]string, error)
 	CatFile(string, io.Writer) error
 	Rm(string) error
@@ -35,8 +35,8 @@ func (c *repo) Init() error {
 	return os.Mkdir(filepath.Join(c.path, "manifests"), 0755)
 }
 
-func (c *repo) Add(r io.Reader, name string) error {
-	w := newChunkWriter(c.path, r)
+func (c *repo) Add(srcPath, name string) error {
+	w := newChunkWriter(c.path, srcPath)
 	spans, err := w.writeChunks(c)
 	if err != nil {
 		return err

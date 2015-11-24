@@ -18,14 +18,16 @@ limitations under the License.
 */
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"reflect"
+	"syscall"
+	"unsafe"
 
 	"github.com/burke/rabit/pkg/rollsum"
 )
@@ -49,21 +51,6 @@ const (
 	tooSmallThreshold = 64 << 10
 )
 
-// noteEOFReader keeps track of when it's seen EOF, but otherwise
-// delegates entirely to r.
-type noteEOFReader struct {
-	r      io.Reader
-	sawEOF bool
-}
-
-func (r *noteEOFReader) Read(p []byte) (n int, err error) {
-	n, err = r.r.Read(p)
-	if err == io.EOF {
-		r.sawEOF = true
-	}
-	return
-}
-
 type span struct {
 	br string
 }
@@ -81,19 +68,17 @@ func uploadString(repo Repo, br, chunk string) error {
 }
 
 type chunkWriter struct {
-	path  string
-	r     io.Reader
-	spans []span
+	path    string
+	srcPath string
+	spans   []span
 }
 
-func newChunkWriter(cspath string, r io.Reader) *chunkWriter {
-	return &chunkWriter{path: cspath, r: r}
+func newChunkWriter(cspath, srcPath string) *chunkWriter {
+	return &chunkWriter{path: cspath, srcPath: srcPath}
 }
 
 func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 	var outerr error
-	src := &noteEOFReader{r: w.r}
-	bufr := bufio.NewReaderSize(src, bufioReaderSize)
 	w.spans = []span{} // the tree of spans, cut on interesting rollsum boundaries
 	rs := rollsum.New()
 	var buf bytes.Buffer
@@ -102,6 +87,35 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 	const chunksInFlight = 32 // at ~64 KB chunks, this is ~2MB memory per file
 	gate := make(chan struct{}, chunksInFlight)
 	firsterrc := make(chan error, 1)
+
+	f, err := os.OpenFile(w.srcPath, os.O_RDONLY, 0)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	stat, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	mmSize := stat.Size()
+	mm, err := mmap(f, mmSize)
+	if err != nil {
+		return nil, err
+	}
+	defer unmap(mm)
+
+	mmd := *mm
+
+	var _p0 unsafe.Pointer
+	_p0 = unsafe.Pointer(&mmd[0])
+	adv := syscall.MADV_SEQUENTIAL | syscall.MADV_WILLNEED
+	// for whatever reason, this isn't defined on darwin yet.
+	_, _, e1 := syscall.Syscall(syscall.SYS_MADVISE, uintptr(_p0), uintptr(len(mmd)), uintptr(adv))
+	if e1 != 0 {
+		return nil, fmt.Errorf("madvise failed")
+	}
+
+	var mmIndex int64
 
 	// uploadLastSpan runs in the same goroutine as the loop below and is responsible for
 	// starting uploading the contents of the buf.  It returns false if there's been
@@ -131,31 +145,24 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 		return true
 	}
 
+	var c byte
+	var onRollSplit bool
 	for {
-		c, err := bufr.ReadByte()
-		if err != nil {
-			if err == io.EOF {
-				if blobSize > 0 {
-					w.spans = append(w.spans, span{})
-					if !uploadLastSpan() {
-						return nil, outerr
-					}
-				}
-				break
-			} else {
-				return nil, err
-			}
+		if mmIndex >= mmSize {
+			break
 		}
+		c = mmd[mmIndex]
+		mmIndex++
 
 		buf.WriteByte(c)
 		blobSize++
-		onRollSplit := rs.Roll(c)
+		onRollSplit = rs.Roll(c)
 		switch {
 		case blobSize == maxBlobSize || onRollSplit && blobSize > tooSmallThreshold:
 			// split
-		case src.sawEOF:
-			// Don't split. End is coming soon enough.
-			continue
+		//case src.sawEOF:
+		// Don't split. End is coming soon enough.
+		//continue
 		default:
 			// Don't split.
 			continue
@@ -188,4 +195,15 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 	}
 
 	return w.spans, nil
+}
+
+func mmap(f *os.File, size int64) (*[]byte, error) {
+	fd := int(f.Fd())
+	bs, err := syscall.Mmap(fd, 0, int(size), syscall.PROT_READ, syscall.MAP_PRIVATE)
+	return &bs, err
+}
+
+func unmap(b *[]byte) {
+	dh := (*reflect.SliceHeader)(unsafe.Pointer(b))
+	syscall.Syscall(syscall.SYS_MUNMAP, dh.Data, uintptr(dh.Len), 0)
 }
