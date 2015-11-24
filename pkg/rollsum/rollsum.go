@@ -28,6 +28,8 @@ const charOffset = 31
 
 const blobBits = 13
 const blobSize = 1 << blobBits // 8k
+const blobMask = blobSize - 1
+const splitMask = ((^0) & (blobSize - 1))
 
 type RollSum struct {
 	s1, s2 uint32
@@ -42,40 +44,11 @@ func New() *RollSum {
 	}
 }
 
-func (rs *RollSum) add(drop, add uint8) {
+func (rs *RollSum) Roll(add byte) bool {
+	drop := rs.window[rs.wofs]
 	rs.s1 += uint32(add) - uint32(drop)
 	rs.s2 += rs.s1 - uint32(windowSize)*uint32(drop+charOffset)
-}
-
-func (rs *RollSum) Roll(ch byte) {
-	rs.add(rs.window[rs.wofs], ch)
-	rs.window[rs.wofs] = ch
+	rs.window[rs.wofs] = add
 	rs.wofs = (rs.wofs + 1) % windowSize
-}
-
-// OnSplit returns whether at least 13 consecutive trailing bits of
-// the current checksum are set the same way.
-func (rs *RollSum) OnSplit() bool {
-	return (rs.s2 & (blobSize - 1)) == ((^0) & (blobSize - 1))
-}
-
-// OnSplit returns whether at least n consecutive trailing bits
-// of the current checksum are set the same way.
-func (rs *RollSum) OnSplitWithBits(n uint32) bool {
-	mask := (uint32(1) << n) - 1
-	return rs.s2&mask == (^uint32(0))&mask
-}
-
-func (rs *RollSum) Bits() int {
-	bits := blobBits
-	rsum := rs.Digest()
-	rsum >>= blobBits
-	for ; (rsum>>1)&1 != 0; bits++ {
-		rsum >>= 1
-	}
-	return bits
-}
-
-func (rs *RollSum) Digest() uint32 {
-	return (rs.s1 << 16) | (rs.s2 & 0xffff)
+	return (rs.s2 & blobMask) == splitMask
 }

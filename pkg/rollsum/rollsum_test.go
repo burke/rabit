@@ -33,7 +33,7 @@ func TestSum(t *testing.T) {
 		for count := offset; count < len; count++ {
 			rs.Roll(buf[count])
 		}
-		return rs.Digest()
+		return (rs.s1 << 16) | (rs.s2 & 0xffff)
 	}
 
 	sum1a := sum(0, len(buf))
@@ -69,7 +69,6 @@ func BenchmarkRollsum(b *testing.B) {
 		for _, b := range buf {
 			rs.Roll(b)
 			if rs.OnSplit() {
-				_ = rs.Bits()
 				splits++
 			}
 		}

@@ -65,13 +65,7 @@ func (r *noteEOFReader) Read(p []byte) (n int, err error) {
 }
 
 type span struct {
-	from, to int64
-	br       string
-}
-
-func (s *span) size() int64 {
-	size := s.to - s.from
-	return size
+	br string
 }
 
 func sha1FromString(s string) string {
@@ -98,12 +92,10 @@ func newChunkWriter(cspath string, r io.Reader) *chunkWriter {
 
 func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 	var outerr error
-	var n int64
 	src := &noteEOFReader{r: w.r}
 	bufr := bufio.NewReaderSize(src, bufioReaderSize)
 	w.spans = []span{} // the tree of spans, cut on interesting rollsum boundaries
 	rs := rollsum.New()
-	var last int64
 	var buf bytes.Buffer
 	blobSize := 0 // of the next blob being built, should be same as buf.Len()
 
@@ -117,8 +109,6 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 	uploadLastSpan := func() bool {
 		chunk := buf.String()
 		buf.Reset()
-		br := sha1FromString(chunk)
-		w.spans[len(w.spans)-1].br = br
 		select {
 		case outerr = <-firsterrc:
 			return false
@@ -126,8 +116,11 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 			// No error seen so far, continue.
 		}
 		gate <- struct{}{}
+		idx := len(w.spans) - 1
 		go func() {
 			defer func() { <-gate }()
+			br := sha1FromString(chunk)
+			w.spans[idx].br = br
 			if err := uploadString(repo, br, chunk); err != nil {
 				select {
 				case firsterrc <- err:
@@ -140,25 +133,23 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 
 	for {
 		c, err := bufr.ReadByte()
-		if err == io.EOF {
-			if n != last {
-				w.spans = append(w.spans, span{from: last, to: n})
-				if !uploadLastSpan() {
-					return nil, outerr
-				}
-			}
-			break
-		}
 		if err != nil {
-			return nil, err
+			if err == io.EOF {
+				if blobSize > 0 {
+					w.spans = append(w.spans, span{})
+					if !uploadLastSpan() {
+						return nil, outerr
+					}
+				}
+				break
+			} else {
+				return nil, err
+			}
 		}
 
 		buf.WriteByte(c)
-		n++
 		blobSize++
-		rs.Roll(c)
-
-		onRollSplit := rs.OnSplit()
+		onRollSplit := rs.Roll(c)
 		switch {
 		case blobSize == maxBlobSize || onRollSplit && blobSize > tooSmallThreshold:
 			// split
@@ -171,8 +162,7 @@ func (w *chunkWriter) writeChunks(repo Repo) ([]span, error) {
 		}
 		blobSize = 0
 
-		w.spans = append(w.spans, span{from: last, to: n})
-		last = n
+		w.spans = append(w.spans, span{})
 
 		if !uploadLastSpan() {
 			return nil, outerr
