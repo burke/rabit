@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -58,6 +59,7 @@ type span struct {
 }
 
 type Manifest struct {
+	sum   string
 	spans []span
 }
 
@@ -65,10 +67,12 @@ func (m *Manifest) Dump() {
 	for _, sp := range m.spans {
 		fmt.Printf("%v\t%d\t%s\n", sp.off, sp.len, sp.sum)
 	}
+	fmt.Printf("\x1b[34m%s\x1b[0m\n", m.sum)
 }
 
 func Generate(r io.Reader) (*Manifest, error) {
 	m := &Manifest{}
+	fileSum := sha256.New()
 
 	src := &noteEOFReader{r: r}
 	bufr := bufio.NewReaderSize(src, bufioReaderSize)
@@ -103,6 +107,7 @@ func Generate(r io.Reader) (*Manifest, error) {
 			break
 		}
 
+		fileSum.Write([]byte{c})
 		buf.WriteByte(c)
 		blobSize++
 		onRollSplit := rs.Roll(c)
@@ -120,5 +125,6 @@ func Generate(r io.Reader) (*Manifest, error) {
 		appendSpan()
 	}
 
+	m.sum = hex.EncodeToString(fileSum.Sum(nil))
 	return m, nil
 }
