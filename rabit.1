@@ -1,0 +1,37 @@
+.\" Read http://liw.fi/manpages/
+.\"
+.\" tl;dr / quick reference:
+.\"   TH: Title
+.\"   SH: Section header
+.\"   \fB: bold
+.\"   \fI: "italic", which renders as underline
+.\"   \fR: "roman", a.k.a. normal
+.\"   .B: bold
+.\"   .TP Indent rest of paragraph after the line immediately following
+.\"
+.TH RABIT 1 2015\-11\-24 rabit rabit
+.SH NAME
+rabit \- rabin fingerprinting utility
+.SH SYNOPSIS
+.nf \" disable paragraph filling so the following shows on one line each
+\fBrabit help\fR [\fIcommand\fR]
+\fBrabit init\fR
+\fBrabit add\fR \fIfile\fR \fIname\fR
+\fBrabit ls\fR
+\fBrabit cat\fR \fIname\fR
+\fBrabit rm\fR \fIname\fR
+\fBrabit gc\fR
+\fBrabit fetch\fR \fIname\fR
+\fBrabit ls-remote\fR
+.fi \" turn paragraph filling back on
+.SH DESCRIPTION
+Rabit manages a repository of rabin-fingerprinted objects to build towards software update stuff. I dunno yet.
+.SH ENVIRONMENT VARIABLES
+.TP
+.B RABIT_DIR
+Path on disk to the rabit repository
+.TP
+.B RABIT_REMOTE
+URL of remote rabit repository
+.SH BUGS
+Oh yes.
